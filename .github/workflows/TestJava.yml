@@ -1,0 +1,32 @@
+name: Java Tests
+
+on:
+  push:
+  pull_request:
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check out code
+        uses: actions/checkout@v4
+
+      - name: Set up Java
+        uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '21'
+
+      - name: Download JUnit and Hamcrest
+        run: |
+          mkdir -p lib
+          curl -L -o lib/junit-4.13.2.jar https://repo1.maven.org/maven2/junit/junit/4.13.2/junit-4.13.2.jar
+          curl -L -o lib/hamcrest-core-1.3.jar https://repo1.maven.org/maven2/org/hamcrest/hamcrest-core/1.3/hamcrest-core-1.3.jar
+
+      - name: Compile source and tests
+        run: |
+          mkdir -p out
+          javac -cp "lib/*" -d out $(find src test -name "*.java")
+
+      - name: Run unit tests
+        run: java -cp "out:lib/*" org.junit.runner.JUnitCore prog5121_poe.LoginTest prog5121_poe.MessageTest
