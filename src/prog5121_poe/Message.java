@@ -5,9 +5,17 @@ import java.nio.file.Files;
 import java.util.ArrayList;
 import java.util.Random;
 
+/**
+ * Represents one chat message in QuickChat.
+ * Handles validation (ID, recipient, length), hash creation,
+ * the send/disregard/store choice, and saving messages to JSON.
+ */
 public class Message {
 
+    // Running total of messages actually sent this session (shared by all messages)
     private static int totalMessagesSent = 0;
+
+    // Every message the user chose to send this session
     private static ArrayList<Message> sentMessages = new ArrayList<>();
 
     private String messageID;
@@ -16,7 +24,7 @@ public class Message {
     private String messageHash;
     private int messageNumber; // position in this session's loop (0, 1, 2...)
 
-    // Normal constructor: random 10-digit ID
+    // Creates a message with a randomly generated 10-digit ID
     public Message(String recipient, String messageText, int messageNumber) {
         this.recipient = recipient;
         this.messageText = messageText;
@@ -24,7 +32,7 @@ public class Message {
         this.messageID = generateMessageID();
     }
 
-    // Overload for unit testing with a fixed/known ID (so hash tests are predictable)
+    // Test-only constructor: lets unit tests supply a fixed ID so the hash is predictable
     public Message(String recipient, String messageText, int messageNumber, String fixedID) {
         this.recipient = recipient;
         this.messageText = messageText;
@@ -32,6 +40,7 @@ public class Message {
         this.messageID = fixedID;
     }
 
+    // Builds a 10-digit ID by appending ten random digits (0-9)
     private String generateMessageID() {
         Random rand = new Random();
         StringBuilder id = new StringBuilder();
@@ -41,16 +50,17 @@ public class Message {
         return id.toString();
     }
 
-    // ID must not exceed 10 characters
+    // Returns true if the message ID is no more than 10 characters long
     public boolean checkMessageID() {
         return messageID != null && messageID.length() <= 10;
     }
 
-    // Reusing the same +27 regex approach as Part 1's checkCellPhoneNumber
+    // Returns true if the number is +27 followed by 9 digits (same rule as Part 1)
     public boolean isRecipientValid() {
         return recipient != null && recipient.matches("^\\+27\\d{9}$");
     }
 
+    // Returns the success or failure message for the recipient's cell number
     public String checkRecipientCell() {
         if (isRecipientValid()) {
             return "Cell phone number successfully captured.";
@@ -60,10 +70,12 @@ public class Message {
         }
     }
 
+    // Returns true if the message is 250 characters or fewer
     public boolean isMessageLengthValid() {
         return messageText.length() <= 250;
     }
 
+    // Returns "Message ready to send." or says how many characters over 250 the message is
     public String checkMessageLength() {
         if (isMessageLengthValid()) {
             return "Message ready to send.";
@@ -73,6 +85,7 @@ public class Message {
         }
     }
 
+    // Builds the hash: first 2 ID digits, message number, then first and last words in capitals
     public String createMessageHash() {
         String idPart = messageID.substring(0, 2);
         String[] words = messageText.trim().split("\\s+");
@@ -82,7 +95,7 @@ public class Message {
         return messageHash;
     }
 
-    // 1 = Send, 2 = Disregard, 3 = Store
+    // Handles the user's choice: 1 = send, 2 = disregard, 3 = store
     public String sentMessage(int choice) {
         switch (choice) {
             case 1:
@@ -99,6 +112,7 @@ public class Message {
         }
     }
 
+    // Returns the details of every message sent so far this session
     public String printMessages() {
         StringBuilder sb = new StringBuilder();
         for (Message m : sentMessages) {
@@ -111,16 +125,19 @@ public class Message {
         return sb.toString();
     }
 
+    // Returns how many messages have been sent so far
     public static int returnTotalMessagess() {
         return totalMessagesSent;
     }
 
-    // Your own storeMessage() method - manually builds JSON, no external library needed
+    // Saves the message to messages.json by building the JSON text by hand.
+    // Reference: [add the source you used for this approach, e.g. website/author, date accessed]
     public void storeMessage() {
         try {
             File file = new File("messages.json");
             ArrayList<String> existing = new ArrayList<>();
 
+            // If the file already exists, read the earlier messages so we don't overwrite them
             if (file.exists()) {
                 String content = new String(Files.readAllBytes(file.toPath())).trim();
                 if (content.length() > 2) {
@@ -133,6 +150,7 @@ public class Message {
                 }
             }
 
+            // Build this message as one JSON object
             String entry = "{"
                     + "\"messageID\":\"" + messageID + "\","
                     + "\"recipient\":\"" + recipient + "\","
@@ -140,6 +158,7 @@ public class Message {
                     + "\"messageHash\":\"" + messageHash + "\"}";
             existing.add(entry);
 
+            // Join all the objects into a JSON array and write it to the file
             StringBuilder json = new StringBuilder("[");
             for (int i = 0; i < existing.size(); i++) {
                 json.append(existing.get(i));
@@ -153,6 +172,9 @@ public class Message {
         }
     }
 
+    // Getter for the message ID
     public String getMessageID() { return messageID; }
+
+    // Getter for the message hash (call createMessageHash first)
     public String getMessageHash() { return messageHash; }
 }
