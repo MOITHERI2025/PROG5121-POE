@@ -1,11 +1,12 @@
 package prog5121_poe;
 
+import java.util.ArrayList;
 import java.util.Scanner;
 
 /**
  * Entry point for QuickChat.
  * Flow: register -> log in -> (only if login succeeds) show the messaging menu.
- * Reference: Written with help from Claude (Anthropic AI assistant), 19 October 2026
+ * Reference: Written with help from Claude (Anthropic AI assistant), 12 November 2026
  */
 public class Main {
     public static void main(String[] args) {
@@ -46,6 +47,10 @@ public class Main {
         if (isLoggedIn) {
             System.out.println("\nWelcome to QuickChat.");
 
+            // Part 3: the manager holds the arrays; load messages stored in earlier sessions
+            MessageManager manager = new MessageManager();
+            manager.loadStoredMessages("messages.json");
+
             // The user decides up front how many messages they will enter this session
             System.out.print("How many messages would you like to send this session? ");
             int numMessages = Integer.parseInt(scanner.nextLine());
@@ -58,6 +63,7 @@ public class Main {
                 System.out.println("\n1) Send Messages");
                 System.out.println("2) Show recently sent messages");
                 System.out.println("3) Quit");
+                System.out.println("4) Stored Messages");
                 System.out.print("Choose an option: ");
                 String choice = scanner.nextLine();
 
@@ -92,6 +98,18 @@ public class Main {
                             int sendChoice = Integer.parseInt(scanner.nextLine());
                             System.out.println(msg.sentMessage(sendChoice));
 
+                            // Part 3: put the message into the matching array
+                            String flag = null;
+                            switch (sendChoice) {
+                                case 1: flag = "Sent"; break;
+                                case 2: flag = "Disregard"; break;
+                                case 3: flag = "Stored"; break;
+                                default: break; // invalid choice: nothing is added
+                            }
+                            if (flag != null) {
+                                manager.addMessage(msg, flag);
+                            }
+
                             messagesEnteredSoFar++;
                         }
                         break;
@@ -107,9 +125,77 @@ public class Main {
                         System.out.println("Goodbye!");
                         break;
 
+                    case "4":
+                        // Part 3: the Stored Messages submenu
+                        storedMessagesMenu(scanner, manager, fName + " " + lName);
+                        break;
+
                     default:
-                        System.out.println("Invalid option, please choose 1-3.");
+                        System.out.println("Invalid option, please choose 1-4.");
                 }
+            }
+        }
+    }
+
+    // Part 3: the Stored Messages submenu. Loops until the user chooses "g" to go back.
+    private static void storedMessagesMenu(Scanner scanner, MessageManager manager, String senderName) {
+        boolean back = false;
+
+        while (!back) {
+            System.out.println("\n=== STORED MESSAGES ===");
+            System.out.println("a) Display the sender and recipient of all stored messages");
+            System.out.println("b) Display the longest stored message");
+            System.out.println("c) Search for a message ID");
+            System.out.println("d) Search for all messages to a recipient");
+            System.out.println("e) Delete a message using its hash");
+            System.out.println("f) Display a report of all stored messages");
+            System.out.println("g) Back to the main menu");
+            System.out.print("Choose an option: ");
+            String choice = scanner.nextLine().trim().toLowerCase();
+
+            switch (choice) {
+                case "a":
+                    System.out.println(manager.displaySendersAndRecipients(senderName));
+                    break;
+
+                case "b":
+                    System.out.println(manager.longestStoredMessage());
+                    break;
+
+                case "c":
+                    System.out.print("Enter the message ID: ");
+                    System.out.println(manager.searchByMessageID(scanner.nextLine().trim()));
+                    break;
+
+                case "d": {
+                    System.out.print("Enter the recipient's cell number: ");
+                    ArrayList<String> results = manager.searchByRecipient(scanner.nextLine().trim());
+                    if (results.isEmpty()) {
+                        System.out.println("No messages found for that recipient.");
+                    } else {
+                        for (String text : results) {
+                            System.out.println(text);
+                        }
+                    }
+                    break;
+                }
+
+                case "e":
+                    // Hashes are always stored in capitals, so convert what the user types
+                    System.out.print("Enter the message hash to delete: ");
+                    System.out.println(manager.deleteByHash(scanner.nextLine().trim().toUpperCase()));
+                    break;
+
+                case "f":
+                    System.out.println(manager.storedReport());
+                    break;
+
+                case "g":
+                    back = true;
+                    break;
+
+                default:
+                    System.out.println("Invalid option, please choose a-g.");
             }
         }
     }
