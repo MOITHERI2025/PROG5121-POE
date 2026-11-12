@@ -174,6 +174,15 @@ public class Message {
 
     // Getter for the message ID
     public String getMessageID() { return messageID; }
+    
+        // Getter for the recipient's cell number
+    public String getRecipient() { return recipient; }
+
+    // Getter for the message text
+    public String getMessageText() { return messageText; }
+
+    // Lets a message that was read back from the JSON file keep its saved hash
+    public void setMessageHash(String messageHash) { this.messageHash = messageHash; }
 
     // Getter for the message hash (call createMessageHash first)
     public String getMessageHash() { return messageHash; }
