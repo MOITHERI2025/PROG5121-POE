@@ -30,3 +30,4 @@ jobs:
 
       - name: Run unit tests
         run: java -cp "out:lib/*" org.junit.runner.JUnitCore prog5121_poe.LoginTest prog5121_poe.MessageTest
+        
